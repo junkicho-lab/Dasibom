@@ -1,0 +1,17 @@
+# specs/shared/types.yaml — 다시봄 타입
+version: "2.0"
+types:
+  - name: Item
+    swiftdata_model: true
+    fields:
+      - { name: id,        type: UUID }
+      - { name: title,     type: String }
+      - { name: dueAt,     type: "Date?" }
+      - { name: notifyAt,  type: "Date?" }
+      - { name: isDone,    type: Bool }
+      - { name: createdAt, type: Date }
+  - name: AppSettings
+    storage: UserDefaults
+    fields:
+      - { name: notifyByDefault,   type: Bool }
+      - { name: defaultLeadMinutes, type: Int, note: "0/10/60" }

@@ -1,0 +1,24 @@
+# 다시봄 도메인 리소스 (로컬 SwiftData 모델)
+# 백엔드 없음 — 화면은 needs만 선언, 저장은 로컬 SwiftData가 제공.
+version: "2.0"
+
+resources:
+  - name: items                 # 할 일/일정 항목
+    storage: SwiftData          # 로컬, 외부 전송 없음 (🟦성역)
+    model: Item
+    fields:
+      - { name: id,        type: UUID,   required: true,  note: 식별자 }
+      - { name: title,     type: String, required: true,  note: 한 줄 내용(필수) }
+      - { name: dueAt,     type: Date?,  required: false, note: 마감/예정 시각(옵셔널, 자연어 파싱 결과) }
+      - { name: notifyAt,  type: Date?,  required: false, note: 알림 시각(옵셔널, 기본=dueAt) }
+      - { name: isDone,    type: Bool,   required: true,  default: false, note: 완료 여부(삭제 아님) }
+      - { name: createdAt, type: Date,   required: true,  note: 생성 시각(정렬·"언제든" 처리) }
+    invariants:
+      - "완료는 isDone 토글로 처리(레코드 삭제 아님)"
+      - "dueAt/notifyAt은 옵셔널 — 날짜 없는 '언젠가' 항목 허용"
+      - "데이터는 기기 로컬에만 — 외부 동기화/전송 금지"
+    # Could(이번 스키마 제외, 확장 여지만): recurrenceRule, tags[]
+    queries:
+      - { name: today,    desc: "오늘(또는 지난 미완료) 항목", filter: "isDone == false AND dueAt <= 오늘끝", sort: "dueAt asc, createdAt asc" }
+      - { name: upcoming, desc: "예정 항목",                  filter: "isDone == false AND dueAt > 오늘끝",  sort: "dueAt asc" }
+      - { name: someday,  desc: "날짜 없는 미완료",            filter: "isDone == false AND dueAt == nil",   sort: "createdAt desc" }

@@ -1,0 +1,49 @@
+# specs/screens/add-edit.yaml — S2 추가/편집
+version: "2.0"
+screen:
+  name: 추가/편집
+  route: /item
+  layout: form
+  purpose: "항목 생성·수정 (빠른 입력 보완: 시간·알림 세부 지정)"
+
+data_requirements:
+  - resource: items
+    needs: [id, title, dueAt, notifyAt, isDone]
+    mode: create-or-edit          # id 있으면 편집, 없으면 생성
+
+components:
+  - id: title_field
+    type: text-input
+    function: "제목(필수). 빈 제목 저장 차단"
+  - id: datetime_field
+    type: datetime-picker
+    function: "날짜·시간(옵셔널). 자연어 파싱 결과 미리 채움, 수정 가능"
+  - id: notify_field
+    type: datetime-picker
+    function: "알림 시각(옵셔널). 기본=dueAt"
+  - id: save_action
+    type: action
+    function: "저장 → 로컬 반영 + notifyAt 있으면 알림 스케줄"
+  - id: delete_action
+    type: action
+    visible_when: "편집 모드"
+    function: "항목 삭제(편집 시에만)"
+
+states:
+  parse_fail: "날짜 파싱 실패 시 → 제목만 저장 + '시간은 직접 정해주세요' 안내. 입력은 절대 막지 않음"
+  invalid: "제목 비어있으면 저장 비활성"
+
+interactions:
+  - { on: "저장", to: main }
+  - { on: "삭제", to: main }
+
+tests:
+  - name: 생성
+    when: "제목+시간 입력 후 저장"
+    then: ["items에 추가", "notifyAt 있으면 알림 등록", "메인으로 복귀"]
+  - name: 파싱 실패 graceful
+    when: "자연어 날짜 인식 실패"
+    then: ["제목만 저장 가능", "시간 직접 지정 안내", "흐름 안 막힘"]
+  - name: 빈 제목 차단
+    when: "제목 비움"
+    then: ["저장 버튼 비활성"]

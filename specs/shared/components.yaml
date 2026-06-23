@@ -1,0 +1,16 @@
+# specs/shared/components.yaml — 다시봄 공통 컴포넌트
+version: "2.0"
+components:
+  - id: item_row
+    type: list-item
+    used_in: [main]
+    parts: [checkbox(isDone), title, time_label(dueAt)]
+    behavior: "체크 → 완료 토글 · 탭 → 편집 이동"
+  - id: quick_input_bar
+    type: text-input
+    used_in: [main]
+    behavior: "한 줄 입력 → 자연어 날짜 파싱 → 즉시 저장. 1초 입력(🟦성역)"
+  - id: datetime_picker
+    type: datetime-picker
+    used_in: [add-edit]
+    behavior: "옵셔널 날짜·시간. 미설정 허용('언젠가')"

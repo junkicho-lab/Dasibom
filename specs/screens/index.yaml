@@ -1,0 +1,7 @@
+# 다시봄 화면 목록
+version: "2.0"
+screens:
+  - { id: main,     file: main.yaml,     name: "메인 (오늘·예정)", route: "/" }
+  - { id: add-edit, file: add-edit.yaml, name: "추가/편집",        route: "/item" }
+  - { id: settings, file: settings.yaml, name: "설정",            route: "/settings" }
+flow: "main(빠른입력바) → 항목 탭 → add-edit → 저장 → main · main → 설정 → settings"

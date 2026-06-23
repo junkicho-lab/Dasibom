@@ -1,0 +1,57 @@
+# specs/screens/main.yaml — S1 메인 (오늘·예정)
+version: "2.0"
+screen:
+  name: 메인 (오늘·예정)
+  route: /
+  layout: list-with-top-input
+  purpose: "적어둔 걸 다시 보게 하는 핵심 화면 (능동 재노출)"
+
+data_requirements:
+  - resource: items
+    needs: [id, title, dueAt, isDone, notifyAt]
+    queries: [today, upcoming, someday]   # resources.yaml 정의 참조
+
+components:
+  - id: quick_input_bar
+    type: text-input
+    position: top
+    function: "항상 보이는 한 줄 입력 → 엔터/＋ 즉시 저장(자연어 날짜 파싱). 1초 입력 = 🟦성역"
+    behavior: "저장 후 입력바 비우고 포커스 유지, 결과는 today/upcoming에 즉시 반영"
+  - id: today_section
+    type: list-section
+    position: main
+    function: "오늘(또는 지난 미완료) 항목, 시간순"
+    data_source: { resource: items, query: today }
+    item: [checkbox, title, time_label]
+  - id: upcoming_section
+    type: list-section
+    position: main
+    function: "다가오는 항목, 시간순"
+    data_source: { resource: items, query: upcoming }
+  - id: someday_section
+    type: list-section
+    position: main
+    function: "날짜 없는 '언젠가' 항목"
+    data_source: { resource: items, query: someday }
+  - id: complete_checkbox
+    type: action
+    function: "체크 → isDone=true (삭제 아님), 목록에서 정리"
+
+states:
+  empty: "할 일이 없어요. 위에 한 줄로 적어보세요. (입력바 강조)"
+  loading: "로컬 조회라 즉시 — 스피너 불필요"
+
+interactions:
+  - { on: "항목 탭", to: add-edit, pass: item.id }
+  - { on: "설정 아이콘 탭", to: settings }
+
+tests:
+  - name: 빠른 입력 즉시 노출
+    when: "입력바에 '내일 3시 치과' 입력 후 저장"
+    then: ["제목='치과'·dueAt=내일15:00 파싱", "upcoming에 즉시 표시", "입력바 비워짐"]
+  - name: 완료 체크
+    when: "오늘 항목 체크"
+    then: ["isDone=true", "오늘 목록에서 정리됨", "레코드 삭제 안 됨"]
+  - name: 빈 상태
+    when: "미완료 항목 0개"
+    then: ["빈 상태 안내 표시", "입력바 강조"]
