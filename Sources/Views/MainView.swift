@@ -30,8 +30,12 @@ struct MainView: View {
             }
         }
         .task {
-            await NotificationService.requestAuthorization()  // 🚨 권한 요청(시작 1회)
             seedDemoIfNeeded()
+            SnapshotPublisher.publish(context: context)       // 위젯 스냅샷 갱신(권한과 무관)
+            await NotificationService.requestAuthorization()  // 🚨 권한 요청(시작 1회)
+        }
+        .onChange(of: items.count) {
+            SnapshotPublisher.publish(context: context)
         }
     }
 
@@ -72,12 +76,11 @@ struct MainView: View {
     private func row(_ item: Item) -> some View {
         HStack(spacing: 12) {
             Button {
-                item.isDone.toggle()                       // 완료=토글(삭제 아님)
-                if item.isDone { NotificationService.cancel(item) }
-                else { NotificationService.reschedule(item) }
+                ItemStore(context).complete(item)          // 반복=다음으로 굴림, 단발=완료
+                NotificationService.reschedule(item)
+                SnapshotPublisher.publish(context: context)
             } label: {
-                Image(systemName: item.isDone ? "checkmark.circle.fill" : "circle")
-                    .foregroundStyle(item.isDone ? .green : .secondary)
+                Image(systemName: "circle").foregroundStyle(.secondary)
             }
             .buttonStyle(.borderless)
 
@@ -85,7 +88,13 @@ struct MainView: View {
                 ItemEditView(item: item)
             } label: {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(item.title).strikethrough(item.isDone)
+                    HStack(spacing: 4) {
+                        Text(item.title)
+                        if item.isRecurring {
+                            Image(systemName: "arrow.triangle.2.circlepath")
+                                .font(.caption2).foregroundStyle(.secondary)
+                        }
+                    }
                     if let due = item.dueAt {
                         Text(due, format: .dateTime.month().day().hour().minute())
                             .font(.caption).foregroundStyle(.secondary)
@@ -114,6 +123,7 @@ struct MainView: View {
         let item = Item(title: parsed.title, dueAt: parsed.dueAt, notifyAt: notifyAt)
         context.insert(item)
         NotificationService.reschedule(item)
+        SnapshotPublisher.publish(context: context)
         draft = ""
     }
 
@@ -126,7 +136,9 @@ struct MainView: View {
             cal.date(byAdding: .day, value: dayOffset,
                      to: cal.date(bySettingHour: hour, minute: 0, second: 0, of: base)!)!
         }
-        context.insert(Item(title: "팀 회의", dueAt: at(0, 9)))
+        let meeting = Item(title: "팀 회의", dueAt: at(0, 9))
+        meeting.recurrence = RecurrenceRule(frequency: .weekdays)   // 평일 반복(아이콘 표시)
+        context.insert(meeting)
         context.insert(Item(title: "치과 예약", dueAt: at(0, 15)))
         context.insert(Item(title: "엄마 생신 선물 사기", dueAt: at(3, 11)))
         context.insert(Item(title: "읽고 싶은 책 메모", dueAt: nil))

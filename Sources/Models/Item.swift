@@ -12,13 +12,16 @@ final class Item {
     var notifyAt: Date?
     var isDone: Bool
     var createdAt: Date
+    /// 반복 규칙(Could). nil = 단발. SwiftData에 Codable로 저장(추가 옵셔널 → 라이트웨이트 마이그레이션).
+    var recurrence: RecurrenceRule?
 
     init(
         title: String,
         dueAt: Date? = nil,
         notifyAt: Date? = nil,
         isDone: Bool = false,
-        createdAt: Date = .now
+        createdAt: Date = .now,
+        recurrence: RecurrenceRule? = nil
     ) {
         self.id = UUID()
         self.title = title
@@ -26,5 +29,8 @@ final class Item {
         self.notifyAt = notifyAt
         self.isDone = isDone
         self.createdAt = createdAt
+        self.recurrence = recurrence
     }
+
+    var isRecurring: Bool { recurrence != nil }
 }

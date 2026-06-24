@@ -37,6 +37,16 @@
 - 알림 권한 요청(UserNotifications) — 진행 동의받음
 - SwiftData 스키마는 Item 최소 6필드로 확정(반복·태그는 Could, 미반영)
 
+## ■ Could 기능 추가 (2026-06-23, 반복일정·위젯)
+- **반복일정**: Item에 옵셔널 `recurrence` 추가(라이트웨이트 마이그레이션) + `RecurrenceEngine`(매일·평일·매주요일·매월) + 완료 시 다음 발생 굴림 + 편집 UI + 리스트 반복 아이콘.
+- **위젯**: WidgetKit medium 위젯(오늘 할 일) + App Group(`group.com.dasibom.app`) 스냅샷 공유.
+- **증거**:
+  - `** BUILD SUCCEEDED **` (앱 + 위젯 extension, App Group 엔타이틀먼트)
+  - `** TEST SUCCEEDED **` — `Executed 20 tests, 0 failures` (반복 6개 추가)
+  - App Group 스냅샷 JSON 기록 확인 — 남은 개수 2, 항목 [팀 회의, 치과 예약, 엄마 생신 선물 사기]
+  - `docs/screenshot-recurring.png` — 반복 아이콘(⟳) 표시 확인
+- **마이그레이션 안전**: 추가 옵셔널 필드만 → 기존 데이터 보존(🚨 스키마 변경, 사람 확인됨).
+
 ## ■ 남은 리스크 / 미완(의도적)
 - 데모 시드(`-seedDemo`)는 개발용 — 출시 전 제거 권장
 - 타임존/DST 경계 추가 테스트 여지

@@ -13,6 +13,8 @@ struct ItemEditView: View {
     @State private var due: Date
     @State private var hasNotify: Bool
     @State private var notify: Date
+    @State private var recurrence: RecurrenceFrequency?   // nil = 반복 없음
+    @State private var weekdays: Set<Int>
 
     init(item: Item) {
         self.item = item
@@ -21,7 +23,11 @@ struct ItemEditView: View {
         _due = State(initialValue: item.dueAt ?? .now)
         _hasNotify = State(initialValue: item.notifyAt != nil)
         _notify = State(initialValue: item.notifyAt ?? item.dueAt ?? .now)
+        _recurrence = State(initialValue: item.recurrence?.frequency)
+        _weekdays = State(initialValue: Set(item.recurrence?.weekdays ?? []))
     }
+
+    private let weekdayNames = ["일", "월", "화", "수", "목", "금", "토"]
 
     private var canSave: Bool {
         !title.trimmingCharacters(in: .whitespaces).isEmpty
@@ -44,10 +50,36 @@ struct ItemEditView: View {
                     DatePicker("알릴 시각", selection: $notify)
                 }
             }
+            Section("반복") {
+                Picker("반복", selection: $recurrence.animation()) {
+                    Text("없음").tag(RecurrenceFrequency?.none)
+                    ForEach(RecurrenceFrequency.allCases) { freq in
+                        Text(freq.label).tag(RecurrenceFrequency?.some(freq))
+                    }
+                }
+                if recurrence == .weekly {
+                    HStack {
+                        ForEach(1...7, id: \.self) { wd in
+                            Button(weekdayNames[wd - 1]) {
+                                if weekdays.contains(wd) { weekdays.remove(wd) } else { weekdays.insert(wd) }
+                            }
+                            .buttonStyle(.borderless)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 6)
+                            .background(weekdays.contains(wd) ? Color.accentColor.opacity(0.2) : Color.clear)
+                            .clipShape(RoundedRectangle(cornerRadius: 6))
+                        }
+                    }
+                }
+                if recurrence != nil && !hasDue {
+                    Text("반복은 날짜가 있어야 동작해요.").font(.caption).foregroundStyle(.orange)
+                }
+            }
             Section {
                 Button("삭제", role: .destructive) {
                     NotificationService.cancel(item)
                     context.delete(item)
+                    SnapshotPublisher.publish(context: context)
                     dismiss()
                 }
             }
@@ -65,7 +97,14 @@ struct ItemEditView: View {
         item.title = title.trimmingCharacters(in: .whitespaces)
         item.dueAt = hasDue ? due : nil
         item.notifyAt = hasNotify ? notify : nil
+        if let freq = recurrence {
+            item.recurrence = RecurrenceRule(frequency: freq,
+                                             weekdays: freq == .weekly ? weekdays.sorted() : [])
+        } else {
+            item.recurrence = nil
+        }
         NotificationService.reschedule(item)
+        SnapshotPublisher.publish(context: context)
         dismiss()
     }
 }
